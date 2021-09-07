@@ -22,18 +22,18 @@ def MakeFolder(folder):
             f'[Error] Failed to create directory : {folder}')
 
 
-def InputChar(message):
-    try:
-        win = curses.initscr()
-        win.addstr(0, 0, message)
-        while True:
-            ch = win.getch()
-            if ch in range(32, 127):
-                break
-            time.sleep(0.05)
-    finally:
+def InputChar(message=''):
+    win = curses.initscr()
+    win.addstr(0, 0, message)
+
+    ch = win.getch()
+    if ch in range(32, 127):
         curses.endwin()
-    return chr(ch)
+        time.sleep(0.05)
+        return chr(ch)
+    else:
+        time.sleep(0.05)
+        return None
 
 
 def MakeImageName(folder):
@@ -69,7 +69,7 @@ class Timelapse(threading.Thread):
     DEFAULT_IMAGE_FOLDER = 'capture_images'
     DEFAULT_VIDEO_FOLDER = 'video_out'
 
-    def __init__(self, width=1920, height=1080, fps=30.0, cap_num=0):
+    def __init__(self, width=1920, height=1080, fps=30.0, cap_num=1):
         self.cap = None
         self.width = width
         self.height = height
@@ -101,6 +101,10 @@ class Timelapse(threading.Thread):
         try:
             while self.run_thread:
                 curr_millis = int(round(time.time() * 1000))
+                # ch = InputChar()
+
+                # if ch is 'v':
+                #     raise Exception('go to make video')
                 if (curr_millis - prev_millis) % cycle == 0:
                     ret, frame = self.cap.read()
                     if ret:
@@ -117,12 +121,15 @@ class Timelapse(threading.Thread):
                         break
         except KeyboardInterrupt:
             self.Stop()
-            key = input('Make video? [y/n]')
+            key = input('\nMake video? [y/n]')
             while True:
                 if key.lower() == "y":
                     self.MakeVideo(src_path=folder,
                                    des_path=Timelapse.DEFAULT_VIDEO_FOLDER)
                 break
+        # except Exception as e:
+        #     self.MakeVideo(src_path=folder,
+        #                    des_path=Timelapse.DEFAULT_VIDEO_FOLDER)
 
     def MakeVideo(self, src_path=DEFAULT_IMAGE_FOLDER, des_path=DEFAULT_VIDEO_FOLDER):
         print('Make video start. [video path : {des_path}]')
